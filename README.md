@@ -26,7 +26,7 @@ This is a simple script that reads two json files and outputs either a json or x
 Naturally, used json and xml libraries for that. I tried everything to write the code
 according to SOLID principles.
 
-Created general interfaces for reader and 
+Created general interfaces(Base classes really) for reader and 
 writer classes to handle different JSON/XML read/write operations.
 
 Created Assigner classes that handle room assignment logic.
