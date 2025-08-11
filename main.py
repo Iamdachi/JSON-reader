@@ -6,20 +6,22 @@ from pathlib import Path
 from typing import TypedDict, NotRequired
 
 
-class Room(TypedDict):
+class BaseEntity(TypedDict):
     id: int
     name: str
+
+
+class Room(BaseEntity):
     students: NotRequired[list[str]]
 
 
-class Student(TypedDict):
-    id: int
-    name: str
+class Student(BaseEntity):
     room: int
 
-class ReaderInterface(ABC):
+
+class BaseReader(ABC):
     @abstractmethod
-    def read(self, filepath: str) -> list[Student] | list[Room]:
+    def read(self, filepath: Path) -> list[Student] | list[Room]:
         """Read students or rooms data from a file.
 
         Args:
@@ -30,9 +32,10 @@ class ReaderInterface(ABC):
         """
         pass
 
-class WriterInterface(ABC):
+
+class BaseWriter(ABC):
     @abstractmethod
-    def write(self, filepath: str, data: list[Room]) -> None:
+    def write(self, filepath: Path, data: list[Room]) -> None:
         """Write room data to a file.
 
         Args:
@@ -41,10 +44,11 @@ class WriterInterface(ABC):
         """
         pass
 
-class JSONReader(ReaderInterface):
+
+class JSONReader(BaseReader):
     """Read JSON data from a file."""
 
-    def read(self, filepath: str) -> list[Student] | list[Room]:
+    def read(self, filepath: Path) -> list[Student] | list[Room]:
         """Read and parse JSON from a file.
 
         Args:
@@ -53,14 +57,14 @@ class JSONReader(ReaderInterface):
         Returns:
             The parsed JSON content.
         """
-        with open(filepath, "r", encoding="utf-8") as file:
+        with filepath.open("r", encoding="utf-8") as file:
             return json.load(file)
 
 
-class JSONWriter(WriterInterface):
+class JSONWriter(BaseWriter):
     """Write data to a JSON file."""
 
-    def write(self, filepath: str, data: list[Room]) -> None:
+    def write(self, filepath: Path, data: list[Room]) -> None:
         """Write room data to a JSON file.
 
         Args:
@@ -71,7 +75,7 @@ class JSONWriter(WriterInterface):
             json.dump(data, file, indent=4)
 
 
-class XMLWriter(WriterInterface):
+class XMLWriter(BaseWriter):
     """Write room data to an XML file."""
 
     @staticmethod
@@ -100,7 +104,7 @@ class XMLWriter(WriterInterface):
         tree = ET.ElementTree(root)
         return tree
 
-    def write(self, filepath: str, data: list[Room]) -> None:
+    def write(self, filepath: Path, data: list[Room]) -> None:
         """Write data to an XML file.
 
         Args:
@@ -137,10 +141,11 @@ class RoomAssigner:
             rooms[room_index]["students"].append(name)
         return rooms
 
-class RoomService:
+
+class RoomAssignmentProcessor:
     """Orchestrates reading, processing, and writing room data."""
 
-    def __init__(self, reader: ReaderInterface, writer: WriterInterface, assigner: RoomAssigner):
+    def __init__(self, reader: BaseReader, writer: BaseWriter, assigner: RoomAssigner):
         """Initialize the RoomService.
 
             Args:
@@ -152,7 +157,7 @@ class RoomService:
         self.writer = writer
         self.assigner = assigner
 
-    def process(self, rooms_file: str, students_file: str, output_file: str
+    def assign_and_export(self, rooms_file: Path, students_file: Path, output_file: Path
     ) -> None:
         """Read input files, assign students to rooms, and write the result.
 
@@ -196,22 +201,25 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    writers = {
-        ".json": JSONWriter(),
-        ".xml": XMLWriter(),
-    }
+    rooms_file = Path(args.rooms)
+    students_file = Path(args.students)
+    output_file = Path(args.output_file)
+    extension = output_file.suffix.lower()
 
     reader = JSONReader()
     assigner = RoomAssigner()
 
-    extension = Path(args.output_file).suffix.lower()
+    writers = {
+        ".json": JSONWriter(),
+        ".xml": XMLWriter(),
+    }
     writer = writers.get(extension)
 
     if not writer:
         raise ValueError(f"Unsupported output format: {extension}")
 
-    service = RoomService(reader, writer, assigner)
-    service.process(args.rooms, args.students, args.output_file)
+    assignment_processor = RoomAssignmentProcessor(reader, writer, assigner)
+    assignment_processor.assign_and_export(rooms_file, students_file, output_file)
 
 
 if __name__ == "__main__":
