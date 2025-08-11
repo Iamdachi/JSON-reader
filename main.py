@@ -3,25 +3,37 @@ import xml.etree.ElementTree as ET
 import argparse
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TypedDict, NotRequired
 
+
+class Room(TypedDict):
+    id: int
+    name: str
+    students: NotRequired[list[str]]
+
+
+class Student(TypedDict):
+    id: int
+    name: str
+    room: int
 
 class ReaderInterface(ABC):
     @abstractmethod
-    def read(self, filepath: str) -> list[dict[str, int | str]]:
-        """Read data from a file.
+    def read(self, filepath: str) -> list[Student] | list[Room]:
+        """Read students or rooms data from a file.
 
         Args:
             filepath: Path to the file.
 
         Returns:
-            The parsed file contents.
+            The parsed list of students or rooms.
         """
         pass
 
 class WriterInterface(ABC):
     @abstractmethod
-    def write(self, filepath: str, data: list[dict[str, int | str]]) -> None:
-        """Write data to a file.
+    def write(self, filepath: str, data: list[Room]) -> None:
+        """Write room data to a file.
 
         Args:
             filepath: Path to the output file.
@@ -32,7 +44,7 @@ class WriterInterface(ABC):
 class JSONReader(ReaderInterface):
     """Read JSON data from a file."""
 
-    def read(self, filepath: str) -> list[dict[str, int | str]]:
+    def read(self, filepath: str) -> list[Student] | list[Room]:
         """Read and parse JSON from a file.
 
         Args:
@@ -48,8 +60,8 @@ class JSONReader(ReaderInterface):
 class JSONWriter(WriterInterface):
     """Write data to a JSON file."""
 
-    def write(self, filepath: str, data: list[dict[str, int | str]]) -> None:
-        """Write data to a JSON file.
+    def write(self, filepath: str, data: list[Room]) -> None:
+        """Write room data to a JSON file.
 
         Args:
             filepath: Path to the output file.
@@ -62,7 +74,8 @@ class JSONWriter(WriterInterface):
 class XMLWriter(WriterInterface):
     """Write room data to an XML file."""
 
-    def build_tree(self, data: list[dict[str, int | str]]) -> ET.ElementTree:
+    @staticmethod
+    def build_tree(data: list[Room]) -> ET.ElementTree:
         """Build an XML tree from the provided room data.
 
         Args:
@@ -87,7 +100,7 @@ class XMLWriter(WriterInterface):
         tree = ET.ElementTree(root)
         return tree
 
-    def write(self, filepath: str, data: list[dict[str, int | str]]) -> None:
+    def write(self, filepath: str, data: list[Room]) -> None:
         """Write data to an XML file.
 
         Args:
@@ -102,9 +115,10 @@ class XMLWriter(WriterInterface):
 class RoomAssigner:
     """Assign students to their respective rooms."""
 
+    @staticmethod
     def assign_students(
-        self, rooms: list[dict[str, int | str]], students: list[dict[str, str]]
-    ) -> list[dict[str, int | str | list[str]]]:
+        rooms: list[Room], students: list[Student]
+    ) -> list[Room]:
         """Add each student to the list of students in their assigned room.
 
         Args:
