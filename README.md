@@ -16,9 +16,9 @@ Note: Follow SOLID principles.
 ## Usage
 
 ```bash
-python main.py --students students.json --rooms rooms.json --output-file result.xml
+python cli.py --rooms data/rooms.json --students data/students.json --output-file out.json
 
-python main.py --students students.json --rooms rooms.json --output-file result.json
+python cli.py --rooms data/rooms.json --students data/students.json --output-file out.xml
 ```
 
 ## Explanation
